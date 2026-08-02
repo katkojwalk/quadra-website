@@ -1,3 +1,4 @@
+
 pipeline {
     agent any
 
@@ -13,9 +14,12 @@ pipeline {
             steps {
                 sshagent(credentials: ['ec2-key']) {
                     sh '''
-                        ssh -o StrictHostKeyChecking=no ec2-user@16.112.110.38 << 'EOF'
+                        scp -o StrictHostKeyChecking=no -r ./* ec2-user@16.112.110.38:/tmp/website/
+
+                        ssh -o StrictHostKeyChecking=no ec2-user@16.112.110.38 << EOF
+                        sudo mkdir -p /usr/share/nginx/html
                         sudo rm -rf /usr/share/nginx/html/*
-                        sudo cp -r /var/lib/jenkins/workspace/quadra-website-pipeline/* /usr/share/nginx/html/
+                        sudo cp -r /tmp/website/* /usr/share/nginx/html/
                         sudo systemctl restart nginx
                         EOF
                     '''
