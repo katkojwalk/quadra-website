@@ -2,36 +2,24 @@ pipeline {
     agent any
 
     stages {
-
-        stage('Checkout') {
+        stage('Clone Repository') {
             steps {
-                checkout scm
+                git branch: 'main',
+                    url: 'https://github.com/katkojwalk/quadra-website.git'
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Deploy to EC2') {
             steps {
-                sh 'docker build -t quadra-website .'
-            }
-        }
-
-        stage('Deploy Container') {
-            steps {
-                sh '''
-                docker stop quadra-website || true
-                docker rm quadra-website || true
-
-                docker run -d \
-                  --name quadra-website \
-                  -p 8081:80 \
-                  quadra-website
-                '''
-            }
-        }
-
-        stage('Verify') {
-            steps {
-                sh 'curl http://localhost:8081'
+                sshagent(credentials: ['ec2-key']) {
+                    sh '''
+                        ssh -o StrictHostKeyChecking=no ec2-user@16.112.110.38 << 'EOF'
+                        sudo rm -rf /usr/share/nginx/html/*
+                        sudo cp -r /var/lib/jenkins/workspace/quadra-website-pipeline/* /usr/share/nginx/html/
+                        sudo systemctl restart nginx
+                        EOF
+                    '''
+                }
             }
         }
     }
