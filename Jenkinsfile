@@ -1,4 +1,3 @@
-
 pipeline {
     agent any
 
@@ -14,6 +13,8 @@ pipeline {
             steps {
                 sshagent(credentials: ['ec2-key']) {
                     sh '''
+                        ssh -o StrictHostKeyChecking=no ec2-user@16.112.110.38 "mkdir -p /tmp/website"
+
                         scp -o StrictHostKeyChecking=no -r ./* ec2-user@16.112.110.38:/tmp/website/
 
                         ssh -o StrictHostKeyChecking=no ec2-user@16.112.110.38 << EOF
@@ -21,7 +22,7 @@ pipeline {
                         sudo rm -rf /usr/share/nginx/html/*
                         sudo cp -r /tmp/website/* /usr/share/nginx/html/
                         sudo systemctl restart nginx
-                        EOF
+EOF
                     '''
                 }
             }
